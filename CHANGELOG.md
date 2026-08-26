@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+- The palette says "Click where the tornadoes are", which is the thing you are
+  actually looking for rather than a general instruction
+- A one-line greeting the first time you log in after installing. A fresh
+  install puts nothing on screen on purpose, and without a word that is hard to
+  tell apart from an addon that did not install. Said once, in chat, never again
+
 ## 1.0.0
 
 First public release.

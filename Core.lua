@@ -441,9 +441,21 @@ f:SetScript("OnEvent", function(_, event, ...)
         -- fires once per addon in the load order, and ours has now had its
         -- turn, so stop hearing about everyone else's
         f:UnregisterEvent("ADDON_LOADED")
+        -- A fresh install deliberately puts nothing on screen, which without a
+        -- word is indistinguishable from an addon that failed to install. One
+        -- chat line, once ever, fixes that without taking over the screen.
+        -- Registered only while the greeting is owed and dropped as soon as it
+        -- is said, so a returning user never carries the cost.
+        if not SszorakMapHelperDB.greeted then
+            f:RegisterEvent("PLAYER_LOGIN")
+        end
         -- the windows build themselves on their first refresh, so nothing
         -- here has to run in a particular file order
         NS.Refresh()
+    elseif event == "PLAYER_LOGIN" then
+        f:UnregisterEvent("PLAYER_LOGIN")
+        SszorakMapHelperDB.greeted = true
+        NS.Print("loaded. The windows only appear during a Sszorak pull - type /sszmap to place them first.")
     elseif event == "ENCOUNTER_START" then
         local id, _, difficulty = ...
         if id ~= NS.ENCOUNTER_ID or not NS.DIFFICULTIES[difficulty] then

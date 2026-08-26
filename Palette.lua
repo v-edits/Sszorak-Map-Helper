@@ -109,8 +109,12 @@ local function build()
     palette:SetBackdropColor(0, 0, 0, 0.8)
 
     local title = palette:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", 0, -8)
-    title:SetText("Click what you see")
+    -- bounded left and right rather than centred on a single point, so a long
+    -- caption cannot spill past the window edge. The right inset clears the padlock.
+    title:SetPoint("TOPLEFT", 8, -8)
+    title:SetPoint("TOPRIGHT", -22, -8)
+    title:SetJustifyH("CENTER")
+    title:SetText("Click where the tornadoes are")
 
     local canvas = CreateFrame("Frame", nil, palette)
     canvas:SetSize(CANVAS, CANVAS)
