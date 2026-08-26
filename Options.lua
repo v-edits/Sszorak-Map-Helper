@@ -6,7 +6,7 @@ local ADDON, NS = ...
 -- timings are things you set once and then forget about.
 
 local WIDTH = 330
-local BASE_H = 304
+local BASE_H = 274
 local ADV_H = 310
 
 local panel
@@ -236,10 +236,6 @@ local function build()
 
     local y = -52
 
-    addCheck(panel, "Show the windows now", y, NS.Positioning, NS.SetPositioning,
-        "The palette and the placements only appear during a Sszorak pull. Tick this to bring them up anywhere so you can drag them into place, then untick it.")
-    y = y - 30
-
     addCheck(panel, "Lock both windows in place", y, NS.AllLocked, NS.SetAllLocked,
         "Stops both windows being dragged. Each window also has its own padlock in its top right corner. The sectors stay clickable either way.")
     y = y - 36
@@ -273,8 +269,8 @@ local function build()
     hint:SetPoint("TOPRIGHT", -16, y)
     hint:SetJustifyH("LEFT")
     hint:SetText(
-        "Right-click a sector on the palette to change which marker sits there."
-            .. " Set them up however your raid calls them - nothing gets moved for you."
+        "The windows are up while this panel is open so you can place them."
+            .. " Right-click a sector to change which marker sits there - nothing gets moved for you."
     )
     y = y - 34
 
@@ -297,7 +293,20 @@ local function build()
 
     applyAdvanced()
     tinsert(UISpecialFrames, "SszorakMapHelperOptions")
+    -- hidden first, then hooked: a frame starts out shown, so hooking before
+    -- this would fire OnHide once while merely building the thing
     panel:Hide()
+
+    -- The windows come up with the settings and go away with them. Hooking the
+    -- frame's own show and hide catches every route in and out - the close
+    -- button, escape through UISpecialFrames, and /sszmap toggling it - rather
+    -- than each of them having to remember to do it.
+    panel:SetScript("OnShow", function()
+        NS.SetPositioning(true)
+    end)
+    panel:SetScript("OnHide", function()
+        NS.SetPositioning(false)
+    end)
 end
 
 function NS.OpenOptions()

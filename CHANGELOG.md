@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- The windows now come up with the settings panel and go away with it, which is
+  what you wanted them for. The Show the windows now tickbox is gone: it had
+  nothing left to do. `/sszmap place` still shows them without the panel
+- Dropped Wago. Releases go to GitHub and CurseForge
+
 ## 1.0.3
 
 - An Advanced options section in the settings, folded away by default so the
