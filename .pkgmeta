@@ -1,0 +1,10 @@
+# The packager names the addon folder after the repository unless told
+# otherwise. This repo is Sszorak-Map-Helper but the folder inside the zip has
+# to match the .toc filename exactly, or the game will not load it.
+package-as: Sszorak-Map-Helper
+
+ignore:
+  - .github
+  - README.md
+  - .gitignore
+  - docs

@@ -1,0 +1,11 @@
+# build output
+*.zip
+dist/
+
+# release automation secrets
+.env
+
+# editor and OS noise
+.vscode/
+.DS_Store
+Thumbs.db

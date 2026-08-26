@@ -1,0 +1,10 @@
+# Store everything with LF. The packager builds on Linux, and mixed endings in
+# a repo make diffs noisy for no benefit.
+* text=auto eol=lf
+
+# Addon media, should any get added, must never be line-ending mangled
+*.tga binary
+*.blp binary
+*.mp3 binary
+*.ogg binary
+*.png binary
