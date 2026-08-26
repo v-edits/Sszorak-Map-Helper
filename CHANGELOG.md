@@ -7,6 +7,9 @@
 - A one-line greeting the first time you log in after installing. A fresh
   install puts nothing on screen on purpose, and without a word that is hard to
   tell apart from an addon that did not install. Said once, in chat, never again
+- An entry in the game's own AddOns settings list, with a button that opens the
+  options. One button rather than a second copy of the settings, so there is no
+  way for two versions of the same option to disagree
 
 ## 1.0.0
 

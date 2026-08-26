@@ -160,17 +160,63 @@ local function build()
     panel:Hide()
 end
 
-function NS.ToggleOptions()
+function NS.OpenOptions()
     if not panel then
         build()
-    end
-    if panel:IsShown() then
-        panel:Hide()
-        return
     end
     panel:Show()
     NS.OptionsRefresh()
 end
+
+function NS.ToggleOptions()
+    if panel and panel:IsShown() then
+        panel:Hide()
+        return
+    end
+    NS.OpenOptions()
+end
+
+-- An entry in Blizzard's own AddOns settings list, so the addon can be found
+-- where people go looking for addon settings instead of only through a slash
+-- command they have to already know. It is a signpost with one button rather
+-- than a second copy of the options: keeping one panel means there is no way
+-- for two versions of the same setting to disagree.
+local function registerBlizzardEntry()
+    if not (Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory) then
+        return
+    end
+    local stub = CreateFrame("Frame")
+    stub.name = "Sszorak Map Helper"
+
+    local title = stub:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText("Sszorak Map Helper")
+
+    local desc = stub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    desc:SetPoint("RIGHT", stub, "RIGHT", -16, 0)
+    desc:SetJustifyH("LEFT")
+    desc:SetText("The settings open in their own movable window, so you can see the addon while you change it.")
+
+    local btn = CreateFrame("Button", nil, stub, "UIPanelButtonTemplate")
+    btn:SetSize(220, 26)
+    btn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -14)
+    btn:SetText("Open the options")
+    btn:SetScript("OnClick", function()
+        -- Blizzard's settings window would sit on top of ours, so step it aside
+        if SettingsPanel and SettingsPanel:IsShown() and HideUIPanel then
+            HideUIPanel(SettingsPanel)
+        end
+        NS.OpenOptions()
+    end)
+
+    local hint = stub:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    hint:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", 0, -10)
+    hint:SetText("Or type /sszmap")
+
+    Settings.RegisterAddOnCategory(Settings.RegisterCanvasLayoutCategory(stub, stub.name))
+end
+
 
 function NS.OptionsRefresh()
     if not panel or not panel:IsShown() then
@@ -180,3 +226,5 @@ function NS.OptionsRefresh()
         row.Sync()
     end
 end
+
+registerBlizzardEntry()
