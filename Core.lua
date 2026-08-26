@@ -110,12 +110,17 @@ function NS.Active()
     return active
 end
 
+-- Session only, deliberately. It tracks whether the settings panel is open,
+-- and persisting that would mean logging in to windows nobody asked for, with
+-- the control that used to turn them off no longer on the panel.
+local positioning = false
+
 function NS.Positioning()
-    return SszorakMapHelperDB and SszorakMapHelperDB.positioning or false
+    return positioning
 end
 
 function NS.SetPositioning(on)
-    SszorakMapHelperDB.positioning = on and true or false
+    positioning = on and true or false
     NS.Refresh()
 end
 
@@ -562,7 +567,6 @@ end
 --#region Events
 
 local DEFAULTS = {
-    positioning = false,
     hidePrompt = false,
     advancedOpen = false,
     paletteScale = 1,
@@ -614,7 +618,7 @@ f:SetScript("OnEvent", function(_, event, ...)
             SszorakMapHelperDB.layout = copyLayout(DEFAULT_LAYOUT)
         end
         -- settings that earlier versions saved and this one no longer has
-        for _, dead in ipairs({ "maxCalls", "shown" }) do
+        for _, dead in ipairs({ "maxCalls", "shown", "positioning" }) do
             SszorakMapHelperDB[dead] = nil
         end
         -- locking used to be one flag for both windows and is now one per

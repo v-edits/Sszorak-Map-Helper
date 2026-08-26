@@ -5,6 +5,9 @@
 - The windows now come up with the settings panel and go away with it, which is
   what you wanted them for. The Show the windows now tickbox is gone: it had
   nothing left to do. `/sszmap place` still shows them without the panel
+- Fixed the windows appearing on their own at login. Whether they are up is
+  session state now rather than something saved, so a session always starts with
+  them away until a pull or the settings panel brings them back
 - Dropped Wago. Releases go to GitHub and CurseForge
 
 ## 1.0.3
