@@ -7,6 +7,12 @@
 - A one-line greeting the first time you log in after installing. A fresh
   install puts nothing on screen on purpose, and without a word that is hard to
   tell apart from an addon that did not install. Said once, in chat, never again
+- The set now clears itself when the winds are actually done with, rather than
+  waiting for you. The timing follows Damage Amp, which is what the winds ride
+  on, using the times NorthernSkyRaidTools measured for Normal, Heroic and Mythic
+- A red LOOK FOR TORNADOES prompt above the placements: five seconds into the
+  pull, and five seconds after each set clears. It takes itself away as soon as
+  all three placements are in, since by then you have found them
 - An entry in the game's own AddOns settings list, with a button that opens the
   options. One button rather than a second copy of the settings, so there is no
   way for two versions of the same option to disagree

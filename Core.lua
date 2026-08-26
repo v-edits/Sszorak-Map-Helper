@@ -293,6 +293,70 @@ end
 
 --#endregion
 
+--#region Encounter schedule
+
+-- The winds ride on Damage Amp, so that is what the set clears against. These
+-- are the times NorthernSkyRaidTools measured, in seconds from ENCOUNTER_START,
+-- per difficulty. Its own winds display hides 20s after each amp, and if NSRT
+-- clears there then that is when the mechanic is done with.
+local AMP_TIMES = {
+    [14] = { 125, 277.1, 429.2 },
+    [15] = { 111.1, 249.3, 387.5 },
+    [16] = { 100, 227.1, 354.2 },
+}
+local RESOLVE_AFTER = 20 -- the winds are finished this long after an amp starts
+local REMIND_AT_PULL = 5 -- first prompt, once the pull has settled
+local REMIND_AFTER_CLEAR = 5 -- and again shortly after each set is cleared
+
+local reminding = false
+local timers = {}
+
+-- The prompt is only true while there is still something to find, so a full
+-- set takes it away without anything having to time that.
+function NS.Reminding()
+    -- while placing the windows it shows regardless, so it can be positioned
+    if NS.Positioning() then
+        return true
+    end
+    return reminding and #calls < NS.PLACEMENTS
+end
+
+local function setReminding(v)
+    reminding = v
+    NS.Refresh()
+end
+
+local function stopSchedule()
+    for _, t in ipairs(timers) do
+        t:Cancel()
+    end
+    wipe(timers)
+    reminding = false
+end
+
+-- Timers exist only between ENCOUNTER_START and ENCOUNTER_END, so the addon is
+-- still doing nothing at all outside a pull.
+local function startSchedule(difficulty)
+    stopSchedule()
+    local function at(delay, fn)
+        timers[#timers + 1] = C_Timer.NewTimer(delay, fn)
+    end
+    at(REMIND_AT_PULL, function()
+        setReminding(true)
+    end)
+    for _, amp in ipairs(AMP_TIMES[difficulty] or {}) do
+        at(amp + RESOLVE_AFTER, function()
+            wipe(calls)
+            setReminding(false)
+        end)
+        at(amp + RESOLVE_AFTER + REMIND_AFTER_CLEAR, function()
+            setReminding(true)
+        end)
+    end
+end
+
+--#endregion
+
 --#region Window plumbing
 
 NS.frames = {} -- pos key -> frame, so a rescale can re-anchor what it grew
@@ -463,6 +527,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         end
         active = true
         wipe(calls)
+        startSchedule(difficulty)
         NS.Refresh()
     elseif event == "ENCOUNTER_END" then
         local id = ...
@@ -471,6 +536,7 @@ f:SetScript("OnEvent", function(_, event, ...)
         end
         active = false
         wipe(calls)
+        stopSchedule()
         NS.Refresh()
     else
         -- combat edges: the readout stops taking the mouse, the palette keeps it
