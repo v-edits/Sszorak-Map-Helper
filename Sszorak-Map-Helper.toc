@@ -6,6 +6,7 @@
 ## X-License: MIT
 ## X-Website: https://github.com/v-edits/Sszorak-Map-Helper
 ## X-Curse-Project-ID: 1668607
+## X-Wago-ID: aNDM2p6o
 ## SavedVariables: SszorakMapHelperDB
 
 Core.lua
