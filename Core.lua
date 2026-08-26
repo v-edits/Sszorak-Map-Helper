@@ -305,24 +305,38 @@ local AMP_TIMES = {
     [16] = { 100, 227.1, 354.2 },
 }
 local RESOLVE_AFTER = 20 -- the winds are finished this long after an amp starts
+local MIDDLE_LEAD = 5 -- how long before an amp to call people in
 local REMIND_AT_PULL = 5 -- first prompt, once the pull has settled
 local REMIND_AFTER_CLEAR = 5 -- and again shortly after each set is cleared
 
-local reminding = false
+-- There is only ever one thing worth saying at a time, so the line above the
+-- placements is a single slot with a name in it rather than two labels taking
+-- turns to hide each other.
+local PROMPTS = {
+    tornadoes = { text = "LOOK FOR TORNADOES", color = { 1, 0.15, 0.15 } },
+    middle = { text = "RUN TO MIDDLE", color = { 1, 0.75, 0.1 } },
+}
+
+local prompt -- key into PROMPTS, or nil for nothing to say
 local timers = {}
 
--- The prompt is only true while there is still something to find, so a full
--- set takes it away without anything having to time that.
-function NS.Reminding()
-    -- while placing the windows it shows regardless, so it can be positioned
+-- What the line should read, or nothing. Looking for tornadoes stops being
+-- true the moment all three are in, so a full set takes the prompt away
+-- without anything having to time that. Being called to the middle is true
+-- regardless of what you have clicked, so it outranks it.
+function NS.Prompt()
+    -- while placing the windows it shows one, so it can be positioned
     if NS.Positioning() then
-        return true
+        return PROMPTS.tornadoes
     end
-    return reminding and #calls < NS.PLACEMENTS
+    if prompt == "tornadoes" and #calls >= NS.PLACEMENTS then
+        return nil
+    end
+    return prompt and PROMPTS[prompt] or nil
 end
 
-local function setReminding(v)
-    reminding = v
+local function setPrompt(key)
+    prompt = key
     NS.Refresh()
 end
 
@@ -331,7 +345,7 @@ local function stopSchedule()
         t:Cancel()
     end
     wipe(timers)
-    reminding = false
+    prompt = nil
 end
 
 -- Timers exist only between ENCOUNTER_START and ENCOUNTER_END, so the addon is
@@ -342,15 +356,18 @@ local function startSchedule(difficulty)
         timers[#timers + 1] = C_Timer.NewTimer(delay, fn)
     end
     at(REMIND_AT_PULL, function()
-        setReminding(true)
+        setPrompt("tornadoes")
     end)
     for _, amp in ipairs(AMP_TIMES[difficulty] or {}) do
+        at(math.max(0, amp - MIDDLE_LEAD), function()
+            setPrompt("middle")
+        end)
         at(amp + RESOLVE_AFTER, function()
             wipe(calls)
-            setReminding(false)
+            setPrompt(nil)
         end)
         at(amp + RESOLVE_AFTER + REMIND_AFTER_CLEAR, function()
-            setReminding(true)
+            setPrompt("tornadoes")
         end)
     end
 end

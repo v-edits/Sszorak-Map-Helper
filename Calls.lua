@@ -31,14 +31,13 @@ local function build()
     title:SetTextColor(0.7, 0.7, 0.7)
     board.title = title
 
-    -- The prompt to go and find them. Parented to the board so it travels with
-    -- it, and sat above rather than inside so it cannot shove the numbers around.
-    local remind = board:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    remind:SetPoint("BOTTOM", board, "TOP", 0, 6)
-    remind:SetTextColor(1, 0.15, 0.15)
-    remind:SetText("LOOK FOR TORNADOES")
-    remind:Hide()
-    board.remind = remind
+    -- The one line the schedule speaks through. Parented to the board so it
+    -- travels with it, and sat above rather than inside so it cannot shove the
+    -- numbers around. Core decides what it says.
+    local prompt = board:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    prompt:SetPoint("BOTTOM", board, "TOP", 0, 6)
+    prompt:Hide()
+    board.prompt = prompt
 
     NS.AttachLock(board, "board")
 end
@@ -69,7 +68,12 @@ function NS.CallsRefresh()
         return
     end
     board:SetScale(NS.Scale("callsScale"))
-    board.remind:SetShown(NS.Reminding())
+    local p = NS.Prompt()
+    board.prompt:SetShown(p ~= nil)
+    if p then
+        board.prompt:SetText(p.text)
+        board.prompt:SetTextColor(unpack(p.color))
+    end
 
     -- click-through once a fight is on, draggable the rest of the time
     local fighting = InCombatLockdown()
