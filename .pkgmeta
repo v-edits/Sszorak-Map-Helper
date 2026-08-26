@@ -3,6 +3,10 @@
 # to match the .toc filename exactly, or the game will not load it.
 package-as: Sszorak-Map-Helper
 
+# Ship the hand-written notes as the release changelog instead of a
+# generated list of commit subjects.
+manual-changelog: CHANGELOG.md
+
 ignore:
   - .github
   - README.md

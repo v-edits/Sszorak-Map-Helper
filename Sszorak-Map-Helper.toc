@@ -1,7 +1,7 @@
 ## Interface: 120007, 120100
 ## Title: Sszorak Map Helper
 ## Notes: Click the sector you can see, get the marker opposite it. Sszorak, Venomous Abyss.
-## Version: 0.2.0
+## Version: @project-version@
 ## Author: v-edits
 ## X-License: MIT
 ## X-Website: https://github.com/v-edits/Sszorak-Map-Helper
