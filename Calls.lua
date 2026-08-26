@@ -36,6 +36,14 @@ local function build()
     -- numbers around. Core decides what it says.
     local prompt = board:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     prompt:SetPoint("BOTTOM", board, "TOP", 0, 6)
+    -- A callout has to land in the corner of your eye rather than be read, so
+    -- it is bigger than the stock large font and outlined to hold up against a
+    -- busy floor. The font file comes from the template so nothing is assumed
+    -- about which one the client is using.
+    local fontFile = prompt:GetFont()
+    if fontFile then
+        pcall(prompt.SetFont, prompt, fontFile, 22, "OUTLINE")
+    end
     prompt:Hide()
     board.prompt = prompt
 
