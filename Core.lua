@@ -285,25 +285,85 @@ end
 -- are the times NorthernSkyRaidTools measured, in seconds from ENCOUNTER_START,
 -- per difficulty. Its own winds display hides 20s after each amp, and if NSRT
 -- clears there then that is when the mechanic is done with.
-local AMP_TIMES = {
+NS.AMP_TIMES = {
     [14] = { 125, 277.1, 429.2 },
     [15] = { 111.1, 249.3, 387.5 },
     [16] = { 100, 227.1, 354.2 },
 }
-local RESOLVE_AFTER = 20 -- the winds are finished this long after an amp starts
-local MIDDLE_LEAD = 5 -- how long before an amp to call people in
-local REMIND_AT_PULL = 5 -- first prompt, once the pull has settled
-local REMIND_AFTER_CLEAR = 5 -- and again shortly after each set is cleared
+-- The offsets around each amp, in seconds. A value only reaches saved
+-- variables once someone changes it, so anyone who leaves a default alone still
+-- picks up a corrected one later rather than being frozen on today's guess.
+NS.TIMER_DEFAULTS = {
+    remindAtPull = 5,
+    middleLead = 5,
+    resolveAfter = 20,
+    remindAfterClear = 5,
+}
+NS.TIMER_ORDER = { "remindAtPull", "middleLead", "resolveAfter", "remindAfterClear" }
+NS.TIMER_LABELS = {
+    remindAtPull = "First prompt after pull",
+    middleLead = "Middle call before amp",
+    resolveAfter = "Clear after amp",
+    remindAfterClear = "Prompt after clear",
+}
+
+function NS.Timer(key)
+    local v = SszorakMapHelperDB.timers and SszorakMapHelperDB.timers[key]
+    return v or NS.TIMER_DEFAULTS[key]
+end
+
+function NS.SetTimer(key, v)
+    if NS.TIMER_DEFAULTS[key] == nil then
+        return
+    end
+    v = math.floor(tonumber(v) or -1)
+    if v < 0 or v > 120 then
+        return
+    end
+    SszorakMapHelperDB.timers = SszorakMapHelperDB.timers or {}
+    SszorakMapHelperDB.timers[key] = (v ~= NS.TIMER_DEFAULTS[key]) and v or nil
+    NS.Refresh()
+end
 
 -- There is only ever one thing worth saying at a time, so the line above the
 -- placements is a single slot with a name in it rather than two labels taking
 -- turns to hide each other.
-local PROMPTS = {
-    tornadoes = { text = "LOOK FOR TORNADOES", color = { 1, 0.15, 0.15 } },
-    middle = { text = "RUN TO MIDDLE", color = { 1, 0.75, 0.1 } },
+local PROMPT_COLORS = {
+    tornadoes = { 1, 0.15, 0.15 },
+    middle = { 1, 0.75, 0.1 },
 }
+NS.PROMPT_DEFAULT_TEXT = {
+    tornadoes = "LOOK FOR TORNADOES",
+    middle = "RUN TO MIDDLE",
+}
+NS.PROMPT_ORDER = { "tornadoes", "middle" }
+NS.PROMPT_LABELS = { tornadoes = "Tornado text", middle = "Middle text" }
 
-local prompt -- key into PROMPTS, or nil for nothing to say
+function NS.PromptText(key)
+    local custom = SszorakMapHelperDB.promptText and SszorakMapHelperDB.promptText[key]
+    return (custom and custom ~= "") and custom or NS.PROMPT_DEFAULT_TEXT[key]
+end
+
+-- Blank, or the same as the default, is stored as nothing at all. That is what
+-- makes clearing the box a reset rather than a way to end up with no text.
+function NS.SetPromptText(key, text)
+    if NS.PROMPT_DEFAULT_TEXT[key] == nil then
+        return
+    end
+    text = strtrim(text or "")
+    SszorakMapHelperDB.promptText = SszorakMapHelperDB.promptText or {}
+    SszorakMapHelperDB.promptText[key] = (text ~= "" and text ~= NS.PROMPT_DEFAULT_TEXT[key]) and text or nil
+    NS.Refresh()
+end
+
+function NS.ResetAdvanced()
+    SszorakMapHelperDB.promptText = nil
+    SszorakMapHelperDB.timers = nil
+    SszorakMapHelperDB.hidePrompt = false
+    NS.Refresh()
+end
+
+local prompt -- key into PROMPT_COLORS, or nil for nothing to say
 local timers = {}
 
 -- What the line should read, or nothing. Looking for tornadoes stops being
@@ -311,15 +371,21 @@ local timers = {}
 -- without anything having to time that. Being called to the middle is true
 -- regardless of what you have clicked, so it outranks it.
 function NS.Prompt()
-    -- while placing the windows it shows one, so it can be positioned.
-    -- Dev preview: add `and not NS.previewing` here to re-enable it.
-    if NS.Positioning() then
-        return PROMPTS.tornadoes
-    end
-    if prompt == "tornadoes" and #calls >= NS.PLACEMENTS then
+    if SszorakMapHelperDB.hidePrompt then
         return nil
     end
-    return prompt and PROMPTS[prompt] or nil
+    -- while placing the windows it shows one, so it can be positioned.
+    -- Dev preview: add `and not NS.previewing` here to re-enable it.
+    local key = prompt
+    if NS.Positioning() then
+        key = "tornadoes"
+    elseif key == "tornadoes" and #calls >= NS.PLACEMENTS then
+        key = nil
+    end
+    if not key then
+        return nil
+    end
+    return { text = NS.PromptText(key), color = PROMPT_COLORS[key] }
 end
 
 local function setPrompt(key)
@@ -342,18 +408,19 @@ local function startSchedule(difficulty)
     local function at(delay, fn)
         timers[#timers + 1] = C_Timer.NewTimer(delay, fn)
     end
-    at(REMIND_AT_PULL, function()
+    at(NS.Timer("remindAtPull"), function()
         setPrompt("tornadoes")
     end)
-    for _, amp in ipairs(AMP_TIMES[difficulty] or {}) do
-        at(math.max(0, amp - MIDDLE_LEAD), function()
+    local clearAt = NS.Timer("resolveAfter")
+    for _, amp in ipairs(NS.AMP_TIMES[difficulty] or {}) do
+        at(math.max(0, amp - NS.Timer("middleLead")), function()
             setPrompt("middle")
         end)
-        at(amp + RESOLVE_AFTER, function()
+        at(amp + clearAt, function()
             wipe(calls)
             setPrompt(nil)
         end)
-        at(amp + RESOLVE_AFTER + REMIND_AFTER_CLEAR, function()
+        at(amp + clearAt + NS.Timer("remindAfterClear"), function()
             setPrompt("tornadoes")
         end)
     end
@@ -400,7 +467,7 @@ function NS.PreviewPrompts()
         ("preview %d/%d: %s"):format(
             previewAt,
             #PREVIEW_CYCLE + 1,
-            step and PROMPTS[step].text or "the gap, no text - press again to finish"
+            step and NS.PromptText(step) or "the gap, no text - press again to finish"
         )
     )
 end
@@ -494,6 +561,8 @@ end
 
 local DEFAULTS = {
     positioning = false,
+    hidePrompt = false,
+    advancedOpen = false,
     paletteScale = 1,
     callsScale = 1,
 }

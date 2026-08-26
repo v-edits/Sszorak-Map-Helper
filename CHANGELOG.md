@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.3
+
+- An Advanced options section in the settings, folded away by default so the
+  everyday panel stays short
+- The two prompts can be reworded. Clearing a box puts the default back rather
+  than leaving you with no text, and a default you never touched is not copied
+  into your settings, so a later reword still reaches you
+- A tickbox to hide the prompt text entirely. The placements still clear on
+  schedule, you just do not get shouted at
+- The four timings around each Damage Amp are editable: first prompt after the
+  pull, the middle call before an amp, how long after an amp the set clears, and
+  how long after that the prompt returns. The amp times themselves are shown for
+  reference but stay fixed, since nine numbers across three difficulties is a
+  spreadsheet rather than a settings row
+
 ## 1.0.2
 
 - Setting a marker no longer rearranges the others. Picking one used to shunt

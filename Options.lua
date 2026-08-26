@@ -1,11 +1,17 @@
 local ADDON, NS = ...
 
--- A small settings window, opened with /sszmap. Everything in here is the
--- quiet-moment kind of setting: where the windows sit, how big they are and
--- whether they are pinned down. Nothing in it needs touching mid-pull.
+-- A small settings window, opened with /sszmap. The top half is the everyday
+-- stuff: where the windows sit, how big they are and whether they are pinned
+-- down. The advanced section folds away underneath it, because wording and
+-- timings are things you set once and then forget about.
 
 local WIDTH = 330
+local BASE_H = 304
+local ADV_H = 310
+
 local panel
+local advanced -- container for the folded section
+local advToggle
 local rows = {} -- every widget that has a Sync, refreshed together
 
 local function addCheck(parent, label, y, get, set, tip)
@@ -72,6 +78,42 @@ local function addStepper(parent, label, y, get, step, fmt)
     }
 end
 
+-- Typed settings commit on enter or on clicking away, and escape puts the box
+-- back to what is actually stored rather than leaving a half-typed edit on
+-- screen pretending to be the setting.
+local function addEdit(parent, label, y, get, set)
+    local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    fs:SetPoint("TOPLEFT", 16, y - 4)
+    fs:SetText(label)
+
+    local eb = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    eb:SetSize(150, 20)
+    eb:SetPoint("TOPRIGHT", -14, y)
+    eb:SetAutoFocus(false)
+    eb:SetMaxLetters(40)
+    eb:SetScript("OnEnterPressed", function(self)
+        set(self:GetText())
+        self:ClearFocus()
+    end)
+    eb:SetScript("OnEditFocusLost", function(self)
+        set(self:GetText())
+    end)
+    eb:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        NS.OptionsRefresh()
+    end)
+
+    rows[#rows + 1] = {
+        Sync = function()
+            -- never yank the text out from under someone mid-type
+            if not eb:HasFocus() then
+                eb:SetText(get() or "")
+                eb:SetCursorPosition(0)
+            end
+        end,
+    }
+end
+
 local function scaleStepper(parent, label, y, key)
     addStepper(parent, label, y, function()
         return NS.Scale(key)
@@ -82,9 +124,88 @@ local function scaleStepper(parent, label, y, key)
     end)
 end
 
+local function applyAdvanced()
+    local open = SszorakMapHelperDB.advancedOpen and true or false
+    advanced:SetShown(open)
+    advToggle:SetText(open and "Advanced options    -" or "Advanced options    +")
+    panel:SetHeight(BASE_H + (open and ADV_H or 0))
+end
+
+-- the measured amp times, shown rather than made editable: nine numbers across
+-- three difficulties is a spreadsheet, not a settings row
+local function ampLine()
+    local short = { [14] = "N", [15] = "H", [16] = "M" }
+    local parts = {}
+    for _, diff in ipairs({ 14, 15, 16 }) do
+        local times = NS.AMP_TIMES[diff]
+        if times then
+            local nums = {}
+            for i, v in ipairs(times) do
+                nums[i] = tostring(math.floor(v + 0.5))
+            end
+            parts[#parts + 1] = short[diff] .. " " .. table.concat(nums, "/")
+        end
+    end
+    return table.concat(parts, "    ")
+end
+
+local function buildAdvanced(p)
+    local y = -4
+
+    for _, key in ipairs(NS.PROMPT_ORDER) do
+        addEdit(p, NS.PROMPT_LABELS[key], y, function()
+            return NS.PromptText(key)
+        end, function(v)
+            NS.SetPromptText(key, v)
+        end)
+        y = y - 28
+    end
+    y = y - 6
+
+    addCheck(p, "Hide the prompt text", y, function()
+        return SszorakMapHelperDB.hidePrompt
+    end, function(v)
+        SszorakMapHelperDB.hidePrompt = v
+        NS.Refresh()
+    end, "Stops both messages appearing at all. The placements still clear on schedule.")
+    y = y - 34
+
+    local tlabel = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    tlabel:SetPoint("TOPLEFT", 16, y)
+    tlabel:SetText("Timings, in seconds")
+    y = y - 22
+
+    for _, key in ipairs(NS.TIMER_ORDER) do
+        addStepper(p, NS.TIMER_LABELS[key], y, function()
+            return NS.Timer(key)
+        end, function(dir)
+            NS.SetTimer(key, NS.Timer(key) + dir)
+        end, function(v)
+            return ("%ds"):format(v)
+        end)
+        y = y - 26
+    end
+    y = y - 8
+
+    local note = p:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    note:SetPoint("TOPLEFT", 16, y)
+    note:SetPoint("TOPRIGHT", -16, y)
+    note:SetJustifyH("LEFT")
+    note:SetText(
+        "Damage Amp lands at " .. ampLine() .. ". Everything above is measured from those, and they are not editable here."
+    )
+    y = y - 40
+
+    local reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    reset:SetSize(150, 22)
+    reset:SetPoint("TOPLEFT", 14, y)
+    reset:SetText("Reset advanced")
+    reset:SetScript("OnClick", NS.ResetAdvanced)
+end
+
 local function build()
     panel = CreateFrame("Frame", "SszorakMapHelperOptions", UIParent, "BackdropTemplate")
-    panel:SetSize(WIDTH, 292)
+    panel:SetSize(WIDTH, BASE_H)
     panel:SetPoint("CENTER")
     panel:SetFrameStrata("DIALOG")
     panel:EnableMouse(true)
@@ -155,7 +276,26 @@ local function build()
         "Right-click a sector on the palette to change which marker sits there."
             .. " Set them up however your raid calls them - nothing gets moved for you."
     )
+    y = y - 34
 
+    advToggle = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    advToggle:SetSize(WIDTH - 28, 22)
+    advToggle:SetPoint("TOPLEFT", 14, y)
+    advToggle:SetScript("OnClick", function()
+        SszorakMapHelperDB.advancedOpen = not SszorakMapHelperDB.advancedOpen
+        applyAdvanced()
+    end)
+    y = y - 26
+
+    -- Everything folded away lives on its own frame, so opening and closing is
+    -- one Show and one height, not a pile of widgets each remembering itself.
+    advanced = CreateFrame("Frame", nil, panel)
+    advanced:SetPoint("TOPLEFT", 0, y)
+    advanced:SetPoint("TOPRIGHT", 0, y)
+    advanced:SetHeight(ADV_H)
+    buildAdvanced(advanced)
+
+    applyAdvanced()
     tinsert(UISpecialFrames, "SszorakMapHelperOptions")
     panel:Hide()
 end
@@ -216,7 +356,6 @@ local function registerBlizzardEntry()
 
     Settings.RegisterAddOnCategory(Settings.RegisterCanvasLayoutCategory(stub, stub.name))
 end
-
 
 function NS.OptionsRefresh()
     if not panel or not panel:IsShown() then
