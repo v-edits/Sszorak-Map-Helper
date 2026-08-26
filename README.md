@@ -22,31 +22,22 @@ tornadoes while you wonder where on earth you even are.
 - The **Placements** window lists them in call order, `1 = Star`, `2 = Triangle`,
   big enough to read without looking away from the fight.
 - **Undo** drops the last one, **Clear** restarts the set. It also clears itself
-  at the start and end of every pull.
+  at the start and end of every pull, and after each amp phase is over.
 
 ## Features
 
 - **Click what you see, get what to call.** The room is drawn as its eight
   sectors, north up, with the dead north and south pair greyed out. Click the
   sector a tornado is in and it records the marker opposite it.
-- **Placements readout** in call order, `1 = Star`, `2 = Triangle`, sized to be
-  read out of the corner of your eye rather than studied.
 - **Warnings timed to the fight.** A red tornado warning when there is something
   to find, and an amber Damage Amp warning five seconds before each amp.
-- **The set clears itself** once the winds are done with, so you never call a
-  stale one. Timed off Damage Amp on Normal, Heroic and Mythic.
+- **The set clears itself** once the winds are done with.
 - **Your marker layout, unchanged.** Right-click any sector to set what sits
-  there. Nothing gets rearranged for you, and the three pairings are printed
-  under the ring so the whole layout can be checked at a glance.
+  there.
 - **Both windows** drag where you like, remember the spot, scale independently
-  and carry their own padlock. Locking never stops the sectors being clickable.
+  and carry their own padlock.
 - **Advanced options** to reword either warning, hide them entirely, or change
   any of the four timings around each amp.
-- **Reachable where you expect it** — an entry in the game's own AddOns settings
-  list, as well as `/sszmap`.
-- **Close to free when it is not needed.** No `OnUpdate`, no combat log parsing,
-  no hooks into Blizzard's frames. Outside a Sszorak pull it listens to two
-  events and does nothing else at all.
 
 ## Licence
 
