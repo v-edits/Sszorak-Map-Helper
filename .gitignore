@@ -1,11 +1,13 @@
-# build output
+# Packager build output. release.sh defaults to "$topdir/.release" and writes
+# the zip beside it, so both need keeping out of the repo if you ever run a
+# build locally rather than letting the Action do it.
+.release/
 *.zip
-dist/
 
-# release automation secrets
+# Never let a token near a commit
 .env
 
-# editor and OS noise
+# Editor and OS noise
 .vscode/
 .DS_Store
 Thumbs.db
