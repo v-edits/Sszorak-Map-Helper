@@ -300,11 +300,13 @@ NS.TIMER_DEFAULTS = {
     remindAfterClear = 5,
 }
 NS.TIMER_ORDER = { "remindAtPull", "middleLead", "resolveAfter", "remindAfterClear" }
+-- Named for the mechanic each one belongs to, so the panel, the note under it
+-- and the changelog all say "amp" for the same thing.
 NS.TIMER_LABELS = {
-    remindAtPull = "First prompt after pull",
-    middleLead = "Middle call before amp",
-    resolveAfter = "Clear after amp",
-    remindAfterClear = "Prompt after clear",
+    remindAtPull = "Tornado warning after pull",
+    middleLead = "Amp warning lead",
+    resolveAfter = "Clear set after amp",
+    remindAfterClear = "Tornado warning after clear",
 }
 
 function NS.Timer(key)
@@ -337,7 +339,7 @@ NS.PROMPT_DEFAULT_TEXT = {
     middle = "RUN TO MIDDLE",
 }
 NS.PROMPT_ORDER = { "tornadoes", "middle" }
-NS.PROMPT_LABELS = { tornadoes = "Tornado text", middle = "Middle text" }
+NS.PROMPT_LABELS = { tornadoes = "Tornado warning", middle = "Damage Amp warning" }
 
 function NS.PromptText(key)
     local custom = SszorakMapHelperDB.promptText and SszorakMapHelperDB.promptText[key]

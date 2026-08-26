@@ -162,12 +162,12 @@ local function buildAdvanced(p)
     end
     y = y - 6
 
-    addCheck(p, "Hide the prompt text", y, function()
+    addCheck(p, "Hide warning text", y, function()
         return SszorakMapHelperDB.hidePrompt
     end, function(v)
         SszorakMapHelperDB.hidePrompt = v
         NS.Refresh()
-    end, "Stops both messages appearing at all. The placements still clear on schedule.")
+    end, "Stops both warnings appearing at all. The placements still clear on schedule.")
     y = y - 34
 
     local tlabel = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
