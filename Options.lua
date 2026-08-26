@@ -153,7 +153,7 @@ local function build()
     hint:SetJustifyH("LEFT")
     hint:SetText(
         "Right-click a sector on the palette to change which marker sits there."
-            .. " Whatever it displaces swaps into the slot it left, so the six always stay one to one."
+            .. " Set them up however your raid calls them - nothing gets moved for you."
     )
 
     tinsert(UISpecialFrames, "SszorakMapHelperOptions")

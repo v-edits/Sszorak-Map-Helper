@@ -55,25 +55,23 @@ local function copyLayout(src)
     return out
 end
 
--- Six live sectors carrying six distinct markers, or it is not a layout. A
--- hand-edited saved variable that lost that gets the default back rather than
--- a palette with two Stars on it and no Square anywhere.
+-- A layout only has to name a real marker for every live sector. It is NOT
+-- checked for duplicates on purpose: if someone wants the same marker twice
+-- that is their call, and throwing their config away over it would be a far
+-- worse surprise than the duplicate.
 local function layoutValid(layout)
     if type(layout) ~= "table" then
         return false
     end
-    local seen, n = {}, 0
     for _, sector in ipairs(NS.SECTORS) do
         if not NS.DEAD[sector] then
             local mark = layout[sector]
-            if not mark or seen[mark] then
+            if type(mark) ~= "number" or mark < 1 or mark > 8 then
                 return false
             end
-            seen[mark] = true
-            n = n + 1
         end
     end
-    return n == 6
+    return true
 end
 
 function NS.ResetLayout()
@@ -89,27 +87,15 @@ function NS.MarkAt(sector)
     return SszorakMapHelperDB.layout[sector]
 end
 
--- Put a marker on a sector and hand whatever was there to the sector this
--- marker just left, so the six stay one to one however much it gets shuffled.
+-- What you pick is what goes there, and nothing else moves. Setting the same
+-- marker twice is allowed: a config that rearranges itself under you to enforce
+-- a rule is more annoying than the mistake it is preventing, and the board shows
+-- the pairings plainly enough for a duplicate to be spotted.
 function NS.SetMarkAt(sector, mark)
     if NS.DEAD[sector] then
         return
     end
-    local layout = SszorakMapHelperDB.layout
-    if layout[sector] == mark then
-        return
-    end
-    local holder
-    for s, m in pairs(layout) do
-        if m == mark then
-            holder = s
-        end
-    end
-    local was = layout[sector]
-    layout[sector] = mark
-    if holder then
-        layout[holder] = was
-    end
+    SszorakMapHelperDB.layout[sector] = mark
     NS.Refresh()
 end
 

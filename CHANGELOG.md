@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+- Setting a marker no longer rearranges the others. Picking one used to shunt
+  whatever it displaced into the slot it came from, which kept the six unique
+  but meant the board moved under you while you were trying to set it up. What
+  you pick is now simply what goes there
+
 ## 1.0.1
 
 - The palette says "Click where the tornadoes are", which is the thing you are
