@@ -8,10 +8,10 @@ name: Release
 # the version and the supported game versions, and CHANGELOG.md for the notes,
 # so nothing here needs editing per release.
 #
-# Each upload target needs two things: its secret passed through below, and its
-# id in the .toc (## X-Curse-Project-ID: and ## X-Wago-ID:). The packager skips
-# a target silently when either is missing, which is safe but quiet - if a
-# release does not show up somewhere, check both halves are present.
+# Uploads go to GitHub and CurseForge. A target needs two things: its secret
+# passed through below, and its id in the .toc (## X-Curse-Project-ID:). The
+# packager skips a target silently when either is missing, which is safe but
+# quiet - if a release does not show up somewhere, check both halves are there.
 
 on:
   push:
@@ -36,4 +36,3 @@ jobs:
         env:
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
