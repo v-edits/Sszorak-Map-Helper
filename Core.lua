@@ -326,8 +326,8 @@ local timers = {}
 -- regardless of what you have clicked, so it outranks it.
 function NS.Prompt()
     -- while placing the windows it shows one, so it can be positioned.
-    -- `not NS.previewing` is dev-only, see the Dev preview region.
-    if NS.Positioning() and not NS.previewing then
+    -- Dev preview: add `and not NS.previewing` here to re-enable it.
+    if NS.Positioning() then
         return PROMPTS.tornadoes
     end
     if prompt == "tornadoes" and #calls >= NS.PLACEMENTS then
@@ -376,13 +376,16 @@ end
 --#endregion
 
 --#region Dev preview
--- DEV ONLY, and deliberately self-contained. To remove it, delete this region,
--- the "preview" branch in the slash handler, and the `not NS.previewing` guard
--- in NS.Prompt. Those three are the only places the word "preview" appears.
+-- DEV ONLY, and currently commented out. To bring it back:
+--   1. delete the --[[ and ]] lines below
+--   2. uncomment the "preview" branch in the slash handler
+--   3. put `and not NS.previewing` back in NS.Prompt
+-- All three are marked "Dev preview".
 --
 -- /sszmap preview steps through the states one press at a time, so each one can
 -- be sat on and looked at, and the last press puts everything back.
 
+--[[
 NS.previewing = false
 local previewWasPositioning
 local previewAt = 0
@@ -415,6 +418,7 @@ function NS.PreviewPrompts()
         )
     )
 end
+]]
 
 --#endregion
 
@@ -624,8 +628,9 @@ SlashCmdList["SSZORAKHELPER"] = function(msg)
     elseif cmd == "place" then
         NS.SetPositioning(not NS.Positioning())
         NS.Print("positioning mode " .. (NS.Positioning() and "ON - drag the windows where you want them" or "OFF"))
-    elseif cmd == "preview" then -- dev only
-        NS.PreviewPrompts()
+    -- Dev preview:
+    -- elseif cmd == "preview" then
+    --     NS.PreviewPrompts()
     elseif cmd == "lock" then
         local v = not NS.AllLocked()
         NS.SetAllLocked(v)
