@@ -6,8 +6,9 @@
   six the default layout happens to use. Moon and Skull were sitting out for no
   good reason
 - The windows also come up while Sszorak is targeted, so markers can be placed
-  before the pull rather than during it. Detected by his npc id rather than his
-  name, which is localised, and only listened for inside The Venomous Abyss
+  before the pull rather than during it. They go away again when you drop
+  target, unless a pull is running or the settings are open. Works on any client
+  language, and costs nothing outside The Venomous Abyss
 
 ## 1.0.4
 
