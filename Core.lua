@@ -19,8 +19,11 @@ NS.MARK_NAMES = {
     [8] = "Skull",
 }
 
--- the six this fight uses. Moon and Skull sit out
-NS.PALETTE = { 1, 2, 3, 4, 6, 7 }
+-- Every raid marker, not just the six the default layout uses. Six sectors and
+-- eight markers means two sit unused, which is the player's business: plenty of
+-- raids call Moon or Skull and there is no reason to make them rename their
+-- own callouts to suit this addon.
+NS.PALETTE = { 1, 2, 3, 4, 5, 6, 7, 8 }
 
 -- Eight sectors, listed clockwise from north, which is the whole trick: the
 -- sector opposite any sector is four steps around the ring, so the pairing

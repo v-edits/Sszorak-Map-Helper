@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- All eight raid markers are offered when you right-click a sector, not just the
+  six the default layout happens to use. Moon and Skull were sitting out for no
+  good reason
+
 ## 1.0.4
 
 - The windows now come up with the settings panel and go away with it, which is
