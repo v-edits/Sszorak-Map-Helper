@@ -5,6 +5,9 @@
 - All eight raid markers are offered when you right-click a sector, not just the
   six the default layout happens to use. Moon and Skull were sitting out for no
   good reason
+- The windows also come up while Sszorak is targeted, so markers can be placed
+  before the pull rather than during it. Detected by his npc id rather than his
+  name, which is localised, and only listened for inside The Venomous Abyss
 
 ## 1.0.4
 

@@ -7,6 +7,12 @@ NS.VERSION = "0.2.0"
 NS.ENCOUNTER_ID = 3420
 NS.DIFFICULTIES = { [14] = "Normal", [15] = "Heroic", [16] = "Mythic" }
 
+-- The Venomous Abyss, and Sszorak himself. Target detection keys off the npc id
+-- rather than the name because names are localised - the Korean client calls
+-- him 스조라크 - so matching on a name would only ever work for some players.
+NS.INSTANCE_ID = 3004
+NS.NPC_ID = 257347
+
 NS.MARK_TEX = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_%d"
 NS.MARK_NAMES = {
     [1] = "Star",
@@ -104,10 +110,11 @@ end
 
 --#region Visibility
 
--- The windows belong to one pull of one boss. Everywhere else they are gone,
--- unless positioning mode is on, which is the only way to get them on screen
--- outside the fight to drag them where you want them.
+-- The windows belong to one pull of one boss. They also come up when he is
+-- targeted, which is when markers get placed, and whenever the settings panel
+-- is open. Everywhere else they are gone.
 local active = false
+local targeting = false
 
 function NS.Active()
     return active
@@ -128,7 +135,18 @@ function NS.SetPositioning(on)
 end
 
 function NS.Visible()
-    return active or NS.Positioning()
+    return active or targeting or NS.Positioning()
+end
+
+-- Creature guids read Creature-0-server-instance-zone-NPCID-spawn, so the sixth
+-- field is the one that identifies him. A player or pet guid is shaped
+-- differently and simply fails the number check.
+local function targetingBoss()
+    local guid = UnitGUID("target")
+    if not guid then
+        return false
+    end
+    return tonumber((select(6, strsplit("-", guid)))) == NS.NPC_ID
 end
 
 --#endregion
@@ -584,10 +602,33 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("ENCOUNTER_START")
 f:RegisterEvent("ENCOUNTER_END")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 -- The regen edges only matter while something is drawn: they flip the readout
 -- to click-through and take the padlocks away. Left registered they would wake
 -- the addon on every mob pulled anywhere in the world, for nothing.
+local inRaid = false
+
+-- PLAYER_TARGET_CHANGED fires on every target swap in the game, so it is only
+-- worth hearing inside the one raid it means anything in.
+local function syncZone()
+    local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
+    local here = instanceID == NS.INSTANCE_ID
+    if here == inRaid then
+        return
+    end
+    inRaid = here
+    if here then
+        f:RegisterEvent("PLAYER_TARGET_CHANGED")
+    else
+        f:UnregisterEvent("PLAYER_TARGET_CHANGED")
+        if targeting then
+            targeting = false
+            NS.Refresh()
+        end
+    end
+end
+
 local regenOn = false
 
 function NS.SyncEvents()
@@ -649,6 +690,14 @@ f:SetScript("OnEvent", function(_, event, ...)
         f:UnregisterEvent("PLAYER_LOGIN")
         SszorakMapHelperDB.greeted = true
         NS.Print("loaded. The windows only appear during a Sszorak pull - type /sszmap to place them first.")
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        syncZone()
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        local was = targeting
+        targeting = targetingBoss()
+        if targeting ~= was then
+            NS.Refresh()
+        end
     elseif event == "ENCOUNTER_START" then
         local id, _, difficulty = ...
         if id ~= NS.ENCOUNTER_ID or not NS.DIFFICULTIES[difficulty] then
