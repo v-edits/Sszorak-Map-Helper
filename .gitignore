@@ -11,3 +11,6 @@
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local project journal, not for the repo
+NOTES.md
