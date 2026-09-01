@@ -31,12 +31,27 @@ NS.MARK_NAMES = {
 -- own callouts to suit this addon.
 NS.PALETTE = { 1, 2, 3, 4, 5, 6, 7, 8 }
 
+-- How far back anything the call does not need is pushed. One number for both
+-- windows so the palette and the readout cannot drift apart.
+NS.FADE = 0.08
+
 -- Eight sectors, listed clockwise from north, which is the whole trick: the
 -- sector opposite any sector is four steps around the ring, so the pairing
 -- falls out of the order and never has to be written down separately.
 -- North and south are the dead pair and never hold a marker.
 NS.SECTORS = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" }
+
+-- North and south are the dead pair: nothing spawns there. They still carry a
+-- marker by default because most raids do mark all eight, but unlike the other
+-- six theirs can be cleared away, which puts the plain letter back. There is no
+-- setting for that - whether the marker is there IS the setting.
 NS.DEAD = { N = true, S = true }
+
+-- A sector takes part only while it is showing a marker, which is always true
+-- for the six and up to the player for the dead pair.
+function NS.SectorLive(sector)
+    return NS.MarkAt(sector) ~= nil
+end
 
 local SECTOR_AT = {}
 for i, s in ipairs(NS.SECTORS) do
@@ -54,7 +69,11 @@ end
 
 -- Star opposite Triangle, Circle opposite Cross, Diamond opposite Square.
 -- Right-click any sector on the palette to rearrange it.
-local DEFAULT_LAYOUT = { NE = 3, E = 2, SE = 4, SW = 6, W = 7, NW = 1 }
+-- Matches NSRT's default marker map for this fight, so a raid running both
+-- sees the same markers in the same places without configuring either.
+-- That includes Diamond on north and Square on south, which can be cleared
+-- away per sector if a raid would rather see the bare letters there.
+local DEFAULT_LAYOUT = { N = 3, NE = 8, E = 4, SE = 5, S = 6, SW = 7, W = 1, NW = 2 }
 
 local function copyLayout(src)
     local out = {}
@@ -73,11 +92,14 @@ local function layoutValid(layout)
         return false
     end
     for _, sector in ipairs(NS.SECTORS) do
-        if not NS.DEAD[sector] then
-            local mark = layout[sector]
-            if type(mark) ~= "number" or mark < 1 or mark > 8 then
+        local mark = layout[sector]
+        if mark == nil then
+            -- only the dead pair is allowed to be empty
+            if not NS.DEAD[sector] then
                 return false
             end
+        elseif type(mark) ~= "number" or mark < 1 or mark > 8 then
+            return false
         end
     end
     return true
@@ -101,10 +123,18 @@ end
 -- a rule is more annoying than the mistake it is preventing, and the board shows
 -- the pairings plainly enough for a duplicate to be spotted.
 function NS.SetMarkAt(sector, mark)
-    if NS.DEAD[sector] then
+    SszorakMapHelperDB.layout[sector] = mark
+    NS.Refresh()
+end
+
+-- Only the dead pair can be emptied. Clearing one of the six would leave the
+-- sector opposite it with nothing to call, which is a way to quietly break the
+-- addon rather than a setting anyone wants.
+function NS.ClearMarkAt(sector)
+    if not NS.DEAD[sector] then
         return
     end
-    SszorakMapHelperDB.layout[sector] = mark
+    SszorakMapHelperDB.layout[sector] = nil
     NS.Refresh()
 end
 
@@ -159,6 +189,39 @@ function NS.Calls()
     return calls
 end
 
+-- Everything that changes the recorded set goes through here rather than
+-- calling Refresh directly, so the sync layer has exactly one place to listen
+-- and no path - click, undo, clear, or the timer after the amp - can forget to
+-- tell the rest of the raid.
+function NS.CallsChanged()
+    NS.Refresh()
+    if NS.Broadcast then
+        NS.Broadcast()
+    end
+end
+
+-- Replaces the set wholesale, which is how a shared set arrives: the message
+-- carries the whole thing, so there is nothing to merge. It refreshes without
+-- broadcasting, or two addons would sit echoing each other forever.
+function NS.SetCalls(list)
+    wipe(calls)
+    for i = 1, #list do
+        calls[i] = list[i]
+    end
+    NS.Refresh()
+end
+
+-- The marks in the current set, as a lookup. A marker placed on two sectors
+-- lights both of them, which is the honest answer: the layout allows
+-- duplicates, so the addon cannot know which of the two was meant.
+function NS.CalledMarks()
+    local set = {}
+    for _, mark in ipairs(calls) do
+        set[mark] = true
+    end
+    return set
+end
+
 -- The fight calls for three placements on every difficulty, so this is a
 -- constant rather than a setting.
 NS.PLACEMENTS = 3
@@ -166,6 +229,9 @@ NS.PLACEMENTS = 3
 -- The one piece of real logic in the addon: you click the sector you can see
 -- the thing in, and what gets recorded is the marker sitting opposite it.
 function NS.Record(sector)
+    if not NS.SectorLive(sector) then
+        return
+    end
     local opp = NS.Opposite(sector)
     local mark = opp and SszorakMapHelperDB.layout[opp]
     if not mark then
@@ -176,7 +242,7 @@ function NS.Record(sector)
         return
     end
     calls[#calls + 1] = mark
-    NS.Refresh()
+    NS.CallsChanged()
 end
 
 function NS.Undo()
@@ -184,7 +250,7 @@ function NS.Undo()
         return
     end
     calls[#calls] = nil
-    NS.Refresh()
+    NS.CallsChanged()
 end
 
 function NS.Clear()
@@ -192,7 +258,7 @@ function NS.Clear()
         return
     end
     wipe(calls)
-    NS.Refresh()
+    NS.CallsChanged()
 end
 
 --#endregion
@@ -447,6 +513,12 @@ local function startSchedule(difficulty)
         at(amp + clearAt, function()
             wipe(calls)
             setPrompt(nil)
+            if NS.Broadcast then
+                -- the clear time is editable in the advanced panel, so raiders
+                -- can have different values set and cannot be relied on to
+                -- clear themselves at the same moment
+                NS.Broadcast()
+            end
         end)
         at(amp + clearAt + NS.Timer("remindAfterClear"), function()
             setPrompt("tornadoes")
@@ -589,6 +661,10 @@ end
 
 local DEFAULTS = {
     hidePrompt = false,
+    -- on by default, but it only does anything for a leader or an assist, so
+    -- an ordinary raider running with it set has nothing happen either way
+    share = true,
+    fadeUnused = true,
     advancedOpen = false,
     paletteScale = 1,
     callsScale = 1,
@@ -658,11 +734,18 @@ f:SetScript("OnEvent", function(_, event, ...)
                 SszorakMapHelperDB[k] = v
             end
         end
+        if type(SszorakMapHelperDB.layout) == "table" then
+            for _, sector in ipairs(NS.SECTORS) do
+                if not NS.DEAD[sector] and SszorakMapHelperDB.layout[sector] == nil then
+                    SszorakMapHelperDB.layout[sector] = DEFAULT_LAYOUT[sector]
+                end
+            end
+        end
         if not layoutValid(SszorakMapHelperDB.layout) then
             SszorakMapHelperDB.layout = copyLayout(DEFAULT_LAYOUT)
         end
         -- settings that earlier versions saved and this one no longer has
-        for _, dead in ipairs({ "maxCalls", "shown", "positioning" }) do
+        for _, dead in ipairs({ "maxCalls", "shown", "positioning", "poleMarkers", "hideUnused" }) do
             SszorakMapHelperDB[dead] = nil
         end
         -- locking used to be one flag for both windows and is now one per
@@ -727,6 +810,7 @@ end)
 SLASH_SSZORAKHELPER1 = "/sszmap"
 SLASH_SSZORAKHELPER2 = "/ssz"
 SLASH_SSZORAKHELPER3 = "/ao"
+SLASH_SSZORAKHELPER4 = "/sszorak"
 SlashCmdList["SSZORAKHELPER"] = function(msg)
     local cmd = (msg or ""):match("^(%S*)")
     cmd = cmd:lower()
@@ -734,7 +818,7 @@ SlashCmdList["SSZORAKHELPER"] = function(msg)
         NS.ToggleOptions()
     elseif cmd == "clear" then
         wipe(calls)
-        NS.Refresh()
+        NS.CallsChanged()
         NS.Print("placements cleared")
     elseif cmd == "undo" then
         NS.Undo()
@@ -748,6 +832,8 @@ SlashCmdList["SSZORAKHELPER"] = function(msg)
         local v = not NS.AllLocked()
         NS.SetAllLocked(v)
         NS.Print("both windows " .. (v and "locked" or "unlocked"))
+    elseif cmd == "bagbagbag" then
+        NS.Bear()
     elseif cmd == "reset" then
         NS.ResetPositions()
         NS.ResetLayout()

@@ -6,7 +6,7 @@ local ADDON, NS = ...
 -- timings are things you set once and then forget about.
 
 local WIDTH = 330
-local BASE_H = 274
+local BASE_H = 376
 local ADV_H = 310
 
 local panel
@@ -240,6 +240,21 @@ local function build()
         "Stops both windows being dragged. Each window also has its own padlock in its top right corner. The sectors stay clickable either way.")
     y = y - 36
 
+    addCheck(panel, "Share the set with the raid", y, function()
+        return SszorakMapHelperDB.share
+    end, function(v)
+        SszorakMapHelperDB.share = v
+    end, "Sends what you record to everyone else running this addon, so they see the calls without being told. Only works if you are the raid leader or an assist. Turn it off if someone else is calling.")
+    y = y - 36
+
+    addCheck(panel, "Fade the markers you do not need", y, function()
+        return SszorakMapHelperDB.fadeUnused
+    end, function(v)
+        SszorakMapHelperDB.fadeUnused = v
+        NS.Refresh()
+    end, "Once all three placements are recorded, everything except the three you are running to fades back. It waits for the full set so it can never hide a sector you still have to click. Right-click north or south to give them a marker, or clear it again.")
+    y = y - 40
+
     scaleStepper(panel, "Palette size", y, "paletteScale")
     y = y - 30
     scaleStepper(panel, "Placements size", y, "callsScale")
@@ -263,6 +278,25 @@ local function build()
     resetLayout:SetText("Reset markers")
     resetLayout:SetScript("OnClick", NS.ResetLayout)
     y = y - 38
+
+    local pushLayout = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    pushLayout:SetSize(WIDTH - 28, 24)
+    pushLayout:SetPoint("TOPLEFT", 14, y)
+    pushLayout:SetText("Send my markers to the raid")
+    pushLayout:SetScript("OnClick", NS.PushLayout)
+    pushLayout:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Send my markers to the raid", 1, 1, 1, 1, true)
+        GameTooltip:AddLine(
+            "Puts your marker layout on everyone else's map so the shared calls mean the same thing on their screen as on yours."
+                .. " Never sent automatically - nobody's config changes unless you press this.",
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    pushLayout:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    y = y - 36
 
     local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     hint:SetPoint("TOPLEFT", 16, y)

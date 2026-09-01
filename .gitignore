@@ -14,3 +14,6 @@ Thumbs.db
 
 # Local project journal, not for the repo
 NOTES.md
+
+# Animation source for the sprite sheet, kept locally for rebuilds
+Media/RollingBearGif.webp

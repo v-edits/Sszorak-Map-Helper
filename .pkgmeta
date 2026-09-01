@@ -12,3 +12,5 @@ ignore:
   - README.md
   - .gitignore
   - docs
+  # the animation source; only the built sprite sheet needs to ship
+  - Media/RollingBearGif.webp

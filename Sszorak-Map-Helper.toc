@@ -11,4 +11,6 @@
 Core.lua
 Palette.lua
 Calls.lua
+Comms.lua
 Options.lua
+Bear.lua

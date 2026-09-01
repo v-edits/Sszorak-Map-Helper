@@ -27,7 +27,8 @@ tornadoes while you wonder where on earth you even are.
 ## Features
 
 - **Click what you see, get what to call.** The room is drawn as its eight
-  sectors, north up, with the dead north and south pair greyed out. Click the
+  sectors, north up, with the dead north and south pair showing their letters - give them a marker
+  from the right-click menu if your raid marks all eight. Click the
   sector a tornado is in and it records the marker opposite it.
 - **Warnings timed to the fight.** A red tornado warning when there is something
   to find, and an amber Damage Amp warning five seconds before each amp.
@@ -36,6 +37,11 @@ tornadoes while you wonder where on earth you even are.
   there.
 - **Both windows** drag where you like, remember the spot, scale independently
   and carry their own padlock.
+- **Share the set with your raid.** If you lead or assist, what you record
+  appears on the board of everyone else running the addon, and a button sends
+  your marker layout across so the calls mean the same thing on their screen.
+- **Markers you do not need fade back** once the set is complete, leaving only
+  the three you are running to.
 - **Advanced options** to reword either warning, hide them entirely, or change
   any of the four timings around each amp.
 

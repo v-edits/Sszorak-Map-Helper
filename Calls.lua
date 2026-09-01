@@ -96,8 +96,11 @@ function NS.CallsRefresh()
             fs:SetText(("%d = %s %s"):format(i, NS.MarkIcon(mark, 18), NS.MarkName(mark)))
             fs:SetTextColor(1, 1, 1, 1)
         else
+            -- An empty slot is a placement you do not have yet, so it fades back
+            -- like an unneeded marker does. While the windows are being placed
+            -- it stays legible, or there would be nothing to aim at.
             fs:SetText(("%d ="):format(i))
-            fs:SetTextColor(1, 1, 1, 0.3)
+            fs:SetTextColor(1, 1, 1, NS.Positioning() and 0.35 or NS.FADE)
         end
         fs:Show()
     end
