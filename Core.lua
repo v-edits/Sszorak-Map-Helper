@@ -107,6 +107,7 @@ end
 
 function NS.ResetLayout()
     SszorakMapHelperDB.layout = copyLayout(DEFAULT_LAYOUT)
+    NS.OfferShareAgain()
     NS.Refresh()
 end
 
@@ -124,6 +125,7 @@ end
 -- the pairings plainly enough for a duplicate to be spotted.
 function NS.SetMarkAt(sector, mark)
     SszorakMapHelperDB.layout[sector] = mark
+    NS.OfferShareAgain()
     NS.Refresh()
 end
 
@@ -135,6 +137,7 @@ function NS.ClearMarkAt(sector)
         return
     end
     SszorakMapHelperDB.layout[sector] = nil
+    NS.OfferShareAgain()
     NS.Refresh()
 end
 
@@ -270,6 +273,10 @@ end
 function NS.MarkName(mark)
     return NS.MARK_NAMES[mark] or "?"
 end
+
+-- Defined here as a no-op and replaced by Comms once it loads, so the layout
+-- can be edited during login before the sharing half exists.
+function NS.OfferShareAgain() end
 
 function NS.Print(msg)
     print("|cff66ddaaSszorak|r: " .. msg)
@@ -706,6 +713,8 @@ local function syncZone()
     inRaid = here
     if here then
         f:RegisterEvent("PLAYER_TARGET_CHANGED")
+        -- a new raid is a new set of people who need the layout
+        NS.OfferShareAgain()
     else
         f:UnregisterEvent("PLAYER_TARGET_CHANGED")
         if targeting then

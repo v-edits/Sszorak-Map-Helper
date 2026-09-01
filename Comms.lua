@@ -174,6 +174,26 @@ function NS.Broadcast()
     send("P", encodeCalls())
 end
 
+-- Session only. Sharing the layout is a once-a-raid job, so the offer goes away
+-- once it is done and comes back the next time it needs doing.
+local pushed = false
+
+-- Whether to offer the one press on the palette: only when it would actually
+-- do something, and only while it still needs doing.
+function NS.LayoutShareable()
+    return not pushed and (outbound()) ~= nil
+end
+
+-- Puts the offer back. Called on walking into the raid, because this is a job
+-- for every raid rather than once per install, and on any edit to the layout,
+-- since the raid would then be looking at something you no longer are.
+function NS.OfferShareAgain()
+    if pushed then
+        pushed = false
+        NS.Refresh()
+    end
+end
+
 -- The layout is pushed by hand, never automatically. Someone who has set up a
 -- custom marker config has a reason for it, and replacing it silently the
 -- moment they join a raid would be a genuinely nasty surprise.
@@ -183,7 +203,9 @@ function NS.PushLayout()
         return NS.Print("layout not sent - " .. why)
     end
     send("L", encodeLayout())
+    pushed = true
     NS.Print("marker layout sent to the group")
+    NS.Refresh()
 end
 
 -- Session only, deliberately not saved: a trace left on by accident would

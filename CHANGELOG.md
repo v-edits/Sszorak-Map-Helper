@@ -1,46 +1,16 @@
 # Changelog
 
-## 1.1.0-alpha3
-
-- Fixed the windows not appearing while Sszorak is targeted. Which zone you are
-  in was only ever read when entering the world, and the game does not always
-  have that answer ready at the moment it says so. One wrong reading stranded
-  the addon for the rest of the session: it decided it was not in the raid, and
-  nothing asked again until the next loading screen, which is exactly what
-  reloading inside the raid would do. The zone is now read on zone changes as
-  well, and again shortly after entering the world
-- `/sszmap comms` also reports what the targeting half can see: the instance it
-  thinks you are in, whether it is watching your target, and the guid of
-  whatever you have selected
-
-## 1.1.0-alpha2
-
-- Fixed sharing not working at all. Two faults, either of which was enough on
-  its own:
-  - The receiver threw every message away. Addon messages name the sender as
-    Name-Realm even for someone on your own realm, and that form does not
-    resolve as a unit, so the leader-or-assist check was false for everybody.
-    The sender is now matched against the group roster and the check is asked of
-    the real unit
-  - Messages could go out on the wrong channel. If LE_PARTY_CATEGORY_INSTANCE is
-    missing on this client then IsInGroup answers true for any group at all, and
-    a normal raid's messages were addressed to INSTANCE_CHAT, where nobody is
-    listening. The category number is used directly now, as DBM does
-- `/sszmap comms` prints what the sharing layer can see - whether the prefix is
-  registered, which channel it would use, whether you have the rank to send -
-  and switches on a trace of everything sent, received and dropped, with the
-  reason for each drop
-
-## 1.1.0-alpha1
+## 1.1.0
 
 - **Share the set with your raid.** The leader or an assist clicks, and everyone
   else running the addon sees the placements appear on their own board. Every
   message carries the whole set rather than a change to it, so a dropped one is
   repaired by the next instead of leaving somebody a step behind. On by default,
   and it does nothing at all unless you have the rank to lead
-- **Send my markers to the raid**, in the settings, puts your marker layout on
-  everyone else's map so the shared calls mean the same thing on their screen as
-  on yours. Never sent on its own: nobody's config changes unless you press it
+- **Share layout with raid** appears under the palette once per raid if you can
+  send, puts your marker layout on everyone else's map, and goes away again.
+  There is also a button in the settings. Never sent on its own: nobody's config
+  changes unless somebody presses it
 - The default layout now matches NSRT's marker map for this fight, so a raid
   running both sees the same markers in the same places without configuring
   either. Only new installs and Reset markers are affected - an existing layout
@@ -53,6 +23,12 @@
   letter back. The other six cannot be emptied, since that would leave the
   sector opposite with nothing to call
 - Markers are drawn slightly smaller, which leaves the octagon less crowded
+- Fixed the windows not appearing while Sszorak is targeted. Which zone you are
+  in was only read on entering the world, and the game does not always have that
+  answer ready at the moment it says so. One wrong reading stranded it for the
+  rest of the session. The zone is read on zone changes as well now
+- `/sszmap comms` reports what the sharing and targeting halves can see, for
+  when something is not behaving
 
 ## 1.0.5
 

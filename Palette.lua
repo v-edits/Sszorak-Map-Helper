@@ -168,6 +168,19 @@ local function build()
     undo:SetText("Undo")
     undo:SetScript("OnClick", NS.Undo)
 
+    -- Hung under the window rather than inside it, the way the warning text
+    -- hangs over the readout. Nothing has to resize when it comes and goes.
+    local share = CreateFrame("Button", nil, palette, "UIPanelButtonTemplate")
+    share:SetPoint("TOPLEFT", palette, "BOTTOMLEFT", 8, -4)
+    share:SetPoint("TOPRIGHT", palette, "BOTTOMRIGHT", -8, -4)
+    share:SetHeight(26)
+    share:SetText("Share layout with raid")
+    share:SetScript("OnClick", function()
+        NS.PushLayout()
+    end)
+    share:Hide()
+    palette.share = share
+
     NS.AttachLock(palette, "palette")
 end
 
@@ -219,5 +232,8 @@ function NS.PaletteRefresh()
         -- straight back when the set is cleared
         btn.icon:SetAlpha(fade and not (mark and called[mark]) and NS.FADE or 1)
     end
+    -- one press, offered only to someone who can actually send, and gone once
+    -- the raid has the layout
+    palette.share:SetShown(NS.LayoutShareable and NS.LayoutShareable() or false)
     pairsLine:SetText(pairsText())
 end
