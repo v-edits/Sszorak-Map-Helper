@@ -828,6 +828,8 @@ SlashCmdList["SSZORAKHELPER"] = function(msg)
     -- Dev preview:
     -- elseif cmd == "preview" then
     --     NS.PreviewPrompts()
+    elseif cmd == "comms" then
+        NS.CommsStatus()
     elseif cmd == "lock" then
         local v = not NS.AllLocked()
         NS.SetAllLocked(v)

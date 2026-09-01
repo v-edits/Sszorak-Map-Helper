@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0-alpha2
+
+- Fixed sharing not working at all. Two faults, either of which was enough on
+  its own:
+  - The receiver threw every message away. Addon messages name the sender as
+    Name-Realm even for someone on your own realm, and that form does not
+    resolve as a unit, so the leader-or-assist check was false for everybody.
+    The sender is now matched against the group roster and the check is asked of
+    the real unit
+  - Messages could go out on the wrong channel. If LE_PARTY_CATEGORY_INSTANCE is
+    missing on this client then IsInGroup answers true for any group at all, and
+    a normal raid's messages were addressed to INSTANCE_CHAT, where nobody is
+    listening. The category number is used directly now, as DBM does
+- `/sszmap comms` prints what the sharing layer can see - whether the prefix is
+  registered, which channel it would use, whether you have the rank to send -
+  and switches on a trace of everything sent, received and dropped, with the
+  reason for each drop
+
 ## 1.1.0-alpha1
 
 - **Share the set with your raid.** The leader or an assist clicks, and everyone

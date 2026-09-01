@@ -85,10 +85,16 @@ end
 
 --#region sending
 
--- A group formed through the group finder is not reachable on "RAID", which is
--- the usual way this breaks for pug raids and never for guild ones.
+-- Category 2 is an instance group, the kind the group finder makes, which is
+-- not reachable on "RAID". The bare number rather than
+-- LE_PARTY_CATEGORY_INSTANCE on purpose: DBM does the same, and if that
+-- constant is ever nil then IsInGroup falls back to the home group and answers
+-- true for ANY group, which would quietly send a normal raid's messages to
+-- INSTANCE_CHAT where nobody is listening.
+local INSTANCE_GROUP = 2
+
 local function groupChannel()
-    if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+    if IsInGroup(INSTANCE_GROUP) then
         return "INSTANCE_CHAT"
     elseif IsInRaid() then
         return "RAID"
@@ -97,8 +103,41 @@ local function groupChannel()
     end
 end
 
+-- Name-Realm for anyone, including people on your own realm, where UnitFullName
+-- leaves the realm off.
+local function fullNameOf(unit)
+    local name, realm = UnitFullName(unit)
+    if not name then
+        return nil
+    end
+    if not realm or realm == "" then
+        realm = select(2, UnitFullName("player"))
+    end
+    return (realm and realm ~= "") and (name .. "-" .. realm) or name
+end
+
+-- CHAT_MSG_ADDON names the sender as Name-Realm even when they share your
+-- realm, and that form does NOT reliably resolve as a unit - asking
+-- UnitIsGroupLeader about it comes back false for everyone. So the roster is
+-- walked for the matching unit token and every question is asked of that.
+local function unitFor(name)
+    if not name then
+        return nil
+    end
+    if fullNameOf("player") == name then
+        return "player"
+    end
+    local token = IsInRaid() and "raid" or "party"
+    for i = 1, GetNumGroupMembers() do
+        local unit = token .. i
+        if UnitExists(unit) and fullNameOf(unit) == name then
+            return unit
+        end
+    end
+end
+
 local function lead(unit)
-    return UnitIsGroupLeader(unit) or UnitIsGroupAssistant(unit)
+    return unit and (UnitIsGroupLeader(unit) or UnitIsGroupAssistant(unit))
 end
 
 -- Where anything is allowed to go out, or nil with the reason, so the button
@@ -118,10 +157,13 @@ local function outbound()
 end
 
 local function send(kind, body)
-    local chan = outbound()
-    if chan then
-        C_ChatInfo.SendAddonMessage(PREFIX, ("%d|%s|%s"):format(PROTOCOL, kind, body), chan)
+    local chan, why = outbound()
+    if not chan then
+        return NS.CommsLog("not sent: %s", why)
     end
+    local msg = ("%d|%s|%s"):format(PROTOCOL, kind, body)
+    C_ChatInfo.SendAddonMessage(PREFIX, msg, chan)
+    NS.CommsLog("sent %s on %s", msg, chan)
     return chan
 end
 
@@ -144,6 +186,31 @@ function NS.PushLayout()
     NS.Print("marker layout sent to the group")
 end
 
+-- Session only, deliberately not saved: a trace left on by accident would
+-- spam someone's chat for weeks.
+local debugging = false
+
+function NS.CommsLog(fmt, ...)
+    if debugging then
+        NS.Print("comms: " .. fmt:format(...))
+    end
+end
+
+function NS.CommsStatus()
+    debugging = not debugging
+    local chan, why = outbound()
+    NS.Print("comms check")
+    print("  prefix registered: " .. tostring(C_ChatInfo.IsAddonMessagePrefixRegistered(PREFIX)))
+    print("  your name on the wire: " .. tostring(fullNameOf("player")))
+    print("  group members: " .. tostring(GetNumGroupMembers()) .. (IsInRaid() and " (raid)" or " (party)"))
+    print("  instance group: " .. tostring(IsInGroup(INSTANCE_GROUP)))
+    print("  channel: " .. tostring(groupChannel()))
+    print("  leader or assist: " .. tostring(lead("player")))
+    print("  sharing switched on: " .. tostring(SszorakMapHelperDB.share))
+    print("  can send: " .. tostring(chan ~= nil) .. (chan and "" or (" - " .. tostring(why))))
+    print("  tracing is now " .. (debugging and "ON" or "OFF"))
+end
+
 --#endregion
 
 --#region receiving
@@ -161,16 +228,21 @@ f:SetScript("OnEvent", function(_, event, ...)
     end
 
     local prefix, text, _, sender = ...
-    if prefix ~= PREFIX or not sender then
+    if prefix ~= PREFIX then
         return
+    end
+    local unit = unitFor(sender)
+    if not unit then
+        return NS.CommsLog("dropped from %s: not found in the group", tostring(sender))
     end
     -- your own sends come back to you like anyone else's
-    if UnitIsUnit("player", sender) then
+    if UnitIsUnit(unit, "player") then
         return
     end
-    if not lead(sender) then
-        return
+    if not lead(unit) then
+        return NS.CommsLog("dropped from %s: not leader or assist", sender)
     end
+    NS.CommsLog("got %s from %s", text, sender)
 
     local kind, body = text:match("^%d+|(%a)|(.*)$")
     if kind == "P" then
