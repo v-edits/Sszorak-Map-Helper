@@ -679,6 +679,7 @@ f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("ENCOUNTER_START")
 f:RegisterEvent("ENCOUNTER_END")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
+f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
 -- The regen edges only matter while something is drawn: they flip the readout
 -- to click-through and take the padlocks away. Left registered they would wake
@@ -687,6 +688,15 @@ local inRaid = false
 
 -- PLAYER_TARGET_CHANGED fires on every target swap in the game, so it is only
 -- worth hearing inside the one raid it means anything in.
+--
+-- Which zone you are in is asked on ZONE_CHANGED_NEW_AREA as well as on
+-- entering the world, and again a moment later. GetInstanceInfo is not
+-- necessarily answering about the new place yet when PLAYER_ENTERING_WORLD
+-- fires, and a single wrong answer there used to strand the addon for the rest
+-- of the session: it would decide it was not in the raid and nothing would ask
+-- again until the next loading screen. DBM does its zone detection on
+-- ZONE_CHANGED_NEW_AREA for the same reason and does not trust
+-- PLAYER_ENTERING_WORLD with it at all.
 local function syncZone()
     local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
     local here = instanceID == NS.INSTANCE_ID
@@ -703,6 +713,17 @@ local function syncZone()
             NS.Refresh()
         end
     end
+end
+
+-- Reports what the targeting half can see, for when it does not behave.
+function NS.ZoneStatus()
+    local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
+    NS.Print("zone check")
+    print("  instance id: " .. tostring(instanceID) .. "  (Venomous Abyss is " .. NS.INSTANCE_ID .. ")")
+    print("  watching your target: " .. tostring(inRaid))
+    print("  boss targeted: " .. tostring(targeting))
+    print("  target guid: " .. tostring(UnitGUID("target")))
+    print("  windows want to show: " .. tostring(NS.Visible()))
 end
 
 local regenOn = false
@@ -775,6 +796,10 @@ f:SetScript("OnEvent", function(_, event, ...)
         NS.Print("loaded. The windows only appear during a Sszorak pull - type /sszmap to place them first.")
     elseif event == "PLAYER_ENTERING_WORLD" then
         syncZone()
+        -- and once more after the zone has certainly settled
+        C_Timer.After(2, syncZone)
+    elseif event == "ZONE_CHANGED_NEW_AREA" then
+        syncZone()
     elseif event == "PLAYER_TARGET_CHANGED" then
         local was = targeting
         targeting = targetingBoss()
@@ -830,6 +855,7 @@ SlashCmdList["SSZORAKHELPER"] = function(msg)
     --     NS.PreviewPrompts()
     elseif cmd == "comms" then
         NS.CommsStatus()
+        NS.ZoneStatus()
     elseif cmd == "lock" then
         local v = not NS.AllLocked()
         NS.SetAllLocked(v)

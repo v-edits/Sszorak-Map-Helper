@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0-alpha3
+
+- Fixed the windows not appearing while Sszorak is targeted. Which zone you are
+  in was only ever read when entering the world, and the game does not always
+  have that answer ready at the moment it says so. One wrong reading stranded
+  the addon for the rest of the session: it decided it was not in the raid, and
+  nothing asked again until the next loading screen, which is exactly what
+  reloading inside the raid would do. The zone is now read on zone changes as
+  well, and again shortly after entering the world
+- `/sszmap comms` also reports what the targeting half can see: the instance it
+  thinks you are in, whether it is watching your target, and the guid of
+  whatever you have selected
+
 ## 1.1.0-alpha2
 
 - Fixed sharing not working at all. Two faults, either of which was enough on
